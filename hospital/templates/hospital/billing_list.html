@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+
+{% block title %}Billing - Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-file-invoice-dollar"></i> Billing</h2>
+    <a href="{% url 'billing_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Create Bill
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <select class="form-select" name="status">
+                    <option value="">All Status</option>
+                    <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="paid" {% if request.GET.status == 'paid' %}selected{% endif %}>Paid</option>
+                    <option value="overdue" {% if request.GET.status == 'overdue' %}selected{% endif %}>Overdue</option>
+                    <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="date" class="form-control" name="date_from" placeholder="From Date" value="{{ request.GET.date_from }}">
+            </div>
+            <div class="col-md-3">
+                <input type="date" class="form-control" name="date_to" placeholder="To Date" value="{{ request.GET.date_to }}">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h4>${{ total_pending|default:0 }}</h4>
+                <p>Total Pending</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4>${{ total_paid|default:0 }}</h4>
+                <p>Total Paid</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <h4>${{ total_overdue|default:0 }}</h4>
+                <p>Total Overdue</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h4>{{ bills.count }}</h4>
+                <p>Total Bills</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bills Table -->
+<div class="card">
+    <div class="card-body">
+        {% if bills %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Bill ID</th>
+                        <th>Patient</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Due Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bill in bills %}
+                    <tr>
+                        <td>#{{ bill.id }}</td>
+                        <td>
+                            <a href="{% url 'patient_detail' bill.patient.pk %}" class="text-decoration-none">
+                                {{ bill.patient.full_name }}
+                            </a>
+                        </td>
+                        <td>{{ bill.description }}</td>
+                        <td><strong>${{ bill.amount }}</strong></td>
+                        <td>
+                            <span class="badge bg-{{ bill.status|yesno:'warning,success,danger,secondary' }}">
+                                {{ bill.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="{% if bill.is_overdue %}text-danger{% endif %}">
+                                {{ bill.due_date }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="#" class="btn btn-sm btn-outline-primary" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'billing_update' bill.pk %}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if bill.status == 'pending' %}
+                                <button class="btn btn-sm btn-outline-success" onclick="markAsPaid('{{ bill.id }}')" title="Mark as Paid">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-file-invoice-dollar fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No bills found</h5>
+            <p class="text-muted">Start by creating your first bill.</p>
+            <a href="{% url 'billing_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create Bill
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Export Options -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-download"></i> Export Options
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="btn-group" role="group">
+                    <button class="btn btn-outline-primary" onclick="exportToCSV('billingTable', 'billing_report.csv')">
+                        <i class="fas fa-file-csv"></i> Export to CSV
+                    </button>
+                    <button class="btn btn-outline-success" onclick="printElement('billingTable')">
+                        <i class="fas fa-print"></i> Print Report
+                    </button>
+                    <button class="btn btn-outline-info" onclick="generatePDF()">
+                        <i class="fas fa-file-pdf"></i> Generate PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function markAsPaid(billId) {
+    if (confirm('Are you sure you want to mark this bill as paid?')) {
+        fetch(`/billing/${billId}/mark-paid/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Bill marked as paid successfully', 'success');
+                location.reload();
+            } else {
+                showNotification('Error marking bill as paid', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred', 'danger');
+        });
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function generatePDF() {
+    showNotification('PDF generation feature coming soon!', 'info');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-md"></i> {{ title }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Personal Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-success"><i class="fas fa-user"></i> Personal Information</h5>
+                            <hr>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name *</label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                            <div class="text-danger">{{ form.first_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name *</label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                            <div class="text-danger">{{ form.last_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">Email *</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                            <div class="text-danger">{{ form.email.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label">Phone *</label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                            <div class="text-danger">{{ form.phone.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.gender.id_for_label }}" class="form-label">Gender *</label>
+                            {{ form.gender }}
+                            {% if form.gender.errors %}
+                            <div class="text-danger">{{ form.gender.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.license_number.id_for_label }}" class="form-label">License Number *</label>
+                            {{ form.license_number }}
+                            {% if form.license_number.errors %}
+                            <div class="text-danger">{{ form.license_number.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Professional Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-success"><i class="fas fa-briefcase"></i> Professional Information</h5>
+                            <hr>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.department.id_for_label }}" class="form-label">Department *</label>
+                            {{ form.department }}
+                            {% if form.department.errors %}
+                            <div class="text-danger">{{ form.department.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.specialization.id_for_label }}" class="form-label">Specialization *</label>
+                            {{ form.specialization }}
+                            {% if form.specialization.errors %}
+                            <div class="text-danger">{{ form.specialization.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="{{ form.qualification.id_for_label }}" class="form-label">Qualification *</label>
+                            {{ form.qualification }}
+                            {% if form.qualification.errors %}
+                            <div class="text-danger">{{ form.qualification.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.experience_years.id_for_label }}" class="form-label">Experience (Years) *</label>
+                            {{ form.experience_years }}
+                            {% if form.experience_years.errors %}
+                            <div class="text-danger">{{ form.experience_years.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.consultation_fee.id_for_label }}" class="form-label">Consultation Fee ($) *</label>
+                            {{ form.consultation_fee }}
+                            {% if form.consultation_fee.errors %}
+                            <div class="text-danger">{{ form.consultation_fee.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Availability -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-success"><i class="fas fa-clock"></i> Availability</h5>
+                            <hr>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.available_days.id_for_label }}" class="form-label">Available Days *</label>
+                            {{ form.available_days }}
+                            {% if form.available_days.errors %}
+                            <div class="text-danger">{{ form.available_days.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">e.g., Monday, Tuesday, Wednesday</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.available_time.id_for_label }}" class="form-label">Available Time *</label>
+                            {{ form.available_time }}
+                            {% if form.available_time.errors %}
+                            <div class="text-danger">{{ form.available_time.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">e.g., 9:00 AM - 5:00 PM</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'doctor_list' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to List
+                                </a>
+                                <div>
+                                    <button type="reset" class="btn btn-outline-warning me-2">
+                                        <i class="fas fa-undo"></i> Reset
+                                    </button>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-save"></i> Save Doctor
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control, .form-select {
+    border-radius: 0.375rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add Bootstrap classes to form fields
+    const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="number"], textarea, select');
+    inputs.forEach(input => {
+        if (!input.classList.contains('form-control')) {
+            input.classList.add('form-control');
+        }
+    });
+});
+</script>
+{% endblock %}

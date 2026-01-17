@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+
+{% block title %}Appointments - Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-calendar-check"></i> Appointments</h2>
+    <a href="{% url 'appointment_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Schedule Appointment
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <input type="date" class="form-control" name="date" value="{{ request.GET.date }}">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="status">
+                    <option value="">All Status</option>
+                    <option value="scheduled" {% if request.GET.status == 'scheduled' %}selected{% endif %}>Scheduled</option>
+                    <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
+                    <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                    <option value="no_show" {% if request.GET.status == 'no_show' %}selected{% endif %}>No Show</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="doctor">
+                    <option value="">All Doctors</option>
+                    {% for doctor in doctors %}
+                    <option value="{{ doctor.id }}" {% if request.GET.doctor == doctor.id|stringformat:"s" %}selected{% endif %}>{{ doctor.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Calendar View Toggle -->
+<div class="btn-group mb-4" role="group">
+    <button type="button" class="btn btn-outline-primary active" id="listView">
+        <i class="fas fa-list"></i> List View
+    </button>
+    <button type="button" class="btn btn-outline-primary" id="calendarView">
+        <i class="fas fa-calendar"></i> Calendar View
+    </button>
+</div>
+
+<!-- List View -->
+<div id="listViewContent">
+    <div class="card">
+        <div class="card-body">
+            {% if appointments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Patient</th>
+                            <th>Doctor</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appointment in appointments %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-info">{{ appointment.date|date:"M d, Y" }}</span>
+                            </td>
+                            <td>{{ appointment.time }}</td>
+                            <td>
+                                <a href="{% url 'patient_detail' appointment.patient.pk %}" class="text-decoration-none">
+                                    <strong>{{ appointment.patient.full_name }}</strong>
+                                </a>
+                            </td>
+                            <td>
+                                <a href="{% url 'doctor_detail' appointment.doctor.pk %}" class="text-decoration-none">
+                                    {{ appointment.doctor.full_name }}
+                                </a>
+                            </td>
+                            <td>{{ appointment.doctor.department.name }}</td>
+                            <td>
+                                <span class="badge bg-{{ appointment.status|yesno:'success,warning,danger,secondary' }}">
+                                    {{ appointment.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'appointment_detail' appointment.pk %}" class="btn btn-sm btn-outline-primary" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'appointment_update' appointment.pk %}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if appointment.status == 'scheduled' %}
+                                    <a href="{% url 'medical_record_create' appointment.pk %}" class="btn btn-sm btn-outline-success" title="Add Medical Record">
+                                        <i class="fas fa-file-medical"></i>
+                                    </a>
+                                    {% endif %}
+                                    <a href="{% url 'appointment_delete' appointment.pk %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No appointments found</h5>
+                <p class="text-muted">Start by scheduling your first appointment.</p>
+                <a href="{% url 'appointment_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Schedule Appointment
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Calendar View -->
+<div id="calendarViewContent" style="display: none;">
+    <div class="card">
+        <div class="card-body">
+            <div id="appointmentCalendar"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h4>{{ today_appointments }}</h4>
+                <p>Today's Appointments</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4>{{ completed_appointments }}</h4>
+                <p>Completed</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h4>{{ scheduled_appointments }}</h4>
+                <p>Scheduled</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <h4>{{ cancelled_appointments }}</h4>
+                <p>Cancelled</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// View toggle functionality
+document.getElementById('listView').addEventListener('click', function() {
+    document.getElementById('listViewContent').style.display = 'block';
+    document.getElementById('calendarViewContent').style.display = 'none';
+    this.classList.add('active');
+    document.getElementById('calendarView').classList.remove('active');
+});
+
+document.getElementById('calendarView').addEventListener('click', function() {
+    document.getElementById('listViewContent').style.display = 'none';
+    document.getElementById('calendarViewContent').style.display = 'block';
+    this.classList.add('active');
+    document.getElementById('listView').classList.remove('active');
+    
+    // Initialize calendar
+    initializeCalendar();
+});
+
+function initializeCalendar() {
+    const calendarEl = document.getElementById('appointmentCalendar');
+    
+    // Fetch appointment data
+    fetch('/api/appointments/calendar/')
+        .then(response => response.json())
+        .then(data => {
+            // Simple calendar implementation
+            const events = data.events;
+            let calendarHTML = '<div class="simple-calendar">';
+            
+            // Generate calendar for current month
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            // Calendar header
+            calendarHTML += '<div class="calendar-header">';
+            calendarHTML += `<h5>${now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h5>`;
+            calendarHTML += '</div>';
+            
+            // Calendar grid
+            calendarHTML += '<div class="calendar-grid">';
+            calendarHTML += '<div class="day-header">Sun</div>';
+            calendarHTML += '<div class="day-header">Mon</div>';
+            calendarHTML += '<div class="day-header">Tue</div>';
+            calendarHTML += '<div class="day-header">Wed</div>';
+            calendarHTML += '<div class="day-header">Thu</div>';
+            calendarHTML += '<div class="day-header">Fri</div>';
+            calendarHTML += '<div class="day-header">Sat</div>';
+            
+            // Empty cells for days before month starts
+            for (let i = 0; i < firstDay; i++) {
+                calendarHTML += '<div class="day empty"></div>';
+            }
+            
+            // Days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayEvents = events.filter(event => event.start.startsWith(dateStr));
+                const isToday = day === now.getDate();
+                
+                calendarHTML += `<div class="day ${isToday ? 'today' : ''} ${dayEvents.length > 0 ? 'has-events' : ''}">`;
+                calendarHTML += `<span class="day-number">${day}</span>`;
+                if (dayEvents.length > 0) {
+                    calendarHTML += `<div class="event-count">${dayEvents.length} appointments</div>`;
+                }
+                calendarHTML += '</div>';
+            }
+            
+            calendarHTML += '</div>';
+            calendarHTML += '</div>';
+            
+            calendarEl.innerHTML = calendarHTML;
+        })
+        .catch(error => console.error('Error loading calendar:', error));
+}
+
+// Add calendar styles
+const calendarStyles = `
+<style>
+.simple-calendar {
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.calendar-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: #dee2e6;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.day-header {
+    background: #f8f9fa;
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.875rem;
+}
+
+.day {
+    background: white;
+    min-height: 80px;
+    padding: 5px;
+    position: relative;
+}
+
+.day.today {
+    background: #e7f3ff;
+}
+
+.day.has-events {
+    background: #f0f8f0;
+}
+
+.day-number {
+    font-weight: bold;
+    font-size: 0.875rem;
+}
+
+.event-count {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 5px;
+}
+</style>
+`;
+
+document.head.insertAdjacentHTML('beforeend', calendarStyles);
+</script>
+{% endblock %}
