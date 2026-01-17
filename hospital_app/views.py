@@ -89,9 +89,17 @@ def patient_create(request):
     if request.method == 'POST':
         form = PatientForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Patient created successfully!')
-            return redirect('patient_list')
+            try:
+                patient = form.save()
+                messages.success(request, f'Patient created successfully! ID: {patient.id}')
+                return redirect('patient_list')
+            except Exception as e:
+                messages.error(request, f'Error saving patient: {str(e)}')
+        else:
+            # Add form errors to messages for debugging
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = PatientForm()
     return render(request, 'hospital/patient_form.html', {'form': form, 'title': 'Add Patient'})
@@ -192,19 +200,37 @@ def doctor_delete(request, pk):
 @login_required
 def appointment_list(request):
     appointments = Appointment.objects.select_related('patient', 'doctor').all().order_by('-date', '-time')
-    return render(request, 'hospital/appointment_list.html', {'appointments': appointments})
+    doctors = Doctor.objects.all()
+    return render(request, 'hospital/appointment_list.html', {'appointments': appointments, 'doctors': doctors})
 
 @login_required
 def appointment_create(request):
     if request.method == 'POST':
         form = AppointmentForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Appointment scheduled successfully!')
-            return redirect('appointment_list')
+            try:
+                appointment = form.save()
+                messages.success(request, f'Appointment scheduled successfully! ID: {appointment.id}')
+                return redirect('appointment_list')
+            except Exception as e:
+                messages.error(request, f'Error saving appointment: {str(e)}')
+        else:
+            # Add form errors to messages for debugging
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = AppointmentForm()
-    return render(request, 'hospital/appointment_form.html', {'form': form, 'title': 'Schedule Appointment'})
+    
+    # Get patients and doctors for the form dropdowns
+    patients = Patient.objects.all()
+    doctors = Doctor.objects.all()
+    return render(request, 'hospital/appointment_form.html', {
+        'form': form, 
+        'title': 'Schedule Appointment',
+        'patients': patients,
+        'doctors': doctors
+    })
 
 @login_required
 def appointment_detail(request, pk):
@@ -299,7 +325,18 @@ def medical_record_create(request, appointment_id):
 @login_required
 def billing_list(request):
     bills = Billing.objects.select_related('patient').all().order_by('-created_at')
-    return render(request, 'hospital/billing_list.html', {'bills': bills})
+    
+    # Calculate totals for summary cards
+    total_pending = bills.filter(status='pending').aggregate(total=Sum('amount'))['total'] or 0
+    total_paid = bills.filter(status='paid').aggregate(total=Sum('amount'))['total'] or 0
+    total_overdue = bills.filter(status='overdue').aggregate(total=Sum('amount'))['total'] or 0
+    
+    return render(request, 'hospital/billing_list.html', {
+        'bills': bills,
+        'total_pending': total_pending,
+        'total_paid': total_paid,
+        'total_overdue': total_overdue
+    })
 
 @login_required
 def billing_create(request):
