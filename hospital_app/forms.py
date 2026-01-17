@@ -19,12 +19,20 @@ class UserRegistrationForm(forms.ModelForm):
 class PatientForm(forms.ModelForm):
     class Meta:
         model = Patient
-        fields = '__all__'
+        fields = ['first_name', 'last_name', 'email', 'phone', 'date_of_birth', 'gender', 'blood_type', 'address', 'emergency_contact', 'emergency_phone', 'medical_history', 'allergies']
         widgets = {
-            'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
-            'medical_history': forms.Textarea(attrs={'rows': 3}),
-            'allergies': forms.Textarea(attrs={'rows': 3}),
-            'address': forms.Textarea(attrs={'rows': 3}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First name'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last name'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email address'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone number'}),
+            'date_of_birth': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'gender': forms.Select(attrs={'class': 'form-select'}),
+            'blood_type': forms.Select(attrs={'class': 'form-select'}),
+            'address': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Address'}),
+            'emergency_contact': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Emergency contact name'}),
+            'emergency_phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Emergency contact phone'}),
+            'medical_history': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Medical history'}),
+            'allergies': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Known allergies'}),
         }
 
 class DoctorForm(forms.ModelForm):
@@ -47,13 +55,24 @@ class DepartmentForm(forms.ModelForm):
 class AppointmentForm(forms.ModelForm):
     class Meta:
         model = Appointment
-        fields = '__all__'
+        fields = ['patient', 'doctor', 'date', 'time', 'status', 'symptoms', 'notes']
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
-            'time': forms.TimeInput(attrs={'type': 'time'}),
-            'symptoms': forms.Textarea(attrs={'rows': 3}),
-            'notes': forms.Textarea(attrs={'rows': 3}),
+            'patient': forms.Select(attrs={'class': 'form-select'}),
+            'doctor': forms.Select(attrs={'class': 'form-select'}),
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'symptoms': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'notes': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add placeholders and help text
+        self.fields['patient'].empty_label = "Select a patient"
+        self.fields['doctor'].empty_label = "Select a doctor"
+        self.fields['symptoms'].widget.attrs['placeholder'] = "Describe the symptoms..."
+        self.fields['notes'].widget.attrs['placeholder'] = "Additional notes..."
 
 class MedicalRecordForm(forms.ModelForm):
     class Meta:

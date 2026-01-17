@@ -5,7 +5,7 @@
 {% block content %}
 <div class="hero-section text-center py-5 bg-gradient">
     <div class="container">
-        <h1 class="display-4 mb-4" style="color: #28e428;">Welcome to Hospital Management System</h1>
+        <h1 class="display-4 mb-4 text-success">Welcome to Hospital Management System</h1>
         <p class="lead text-white mb-4">Comprehensive healthcare management solution for modern hospitals</p>
         {% if user.is_authenticated %}
         <a href="{% url 'dashboard' %}" class="btn btn-light btn-lg me-3">
