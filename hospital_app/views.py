@@ -5,8 +5,13 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db.models import Count, Sum, Q
 from django.utils import timezone
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from datetime import datetime, date, timedelta
+import csv
+import io
+
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 from .models import Patient, Doctor, Appointment, Department, MedicalRecord, Prescription, Billing
 from .forms import (
     PatientForm, DoctorForm, AppointmentForm, DepartmentForm,
@@ -324,19 +329,134 @@ def medical_record_create(request, appointment_id):
 # Billing views
 @login_required
 def billing_list(request):
-    bills = Billing.objects.select_related('patient').all().order_by('-created_at')
-    
-    # Calculate totals for summary cards
+    bills = _get_filtered_bills(request)
+
+    # Calculate totals for summary cards (based on the filtered set)
     total_pending = bills.filter(status='pending').aggregate(total=Sum('amount'))['total'] or 0
     total_paid = bills.filter(status='paid').aggregate(total=Sum('amount'))['total'] or 0
     total_overdue = bills.filter(status='overdue').aggregate(total=Sum('amount'))['total'] or 0
-    
+
     return render(request, 'hospital/billing_list.html', {
         'bills': bills,
         'total_pending': total_pending,
         'total_paid': total_paid,
         'total_overdue': total_overdue
     })
+
+
+def _get_filtered_bills(request):
+    bills = Billing.objects.select_related('patient').all().order_by('-created_at')
+
+    status = request.GET.get('status')
+    if status:
+        bills = bills.filter(status=status)
+
+    date_from = request.GET.get('date_from')
+    if date_from:
+        bills = bills.filter(created_at__date__gte=date_from)
+
+    date_to = request.GET.get('date_to')
+    if date_to:
+        bills = bills.filter(created_at__date__lte=date_to)
+
+    return bills
+
+
+@login_required
+def billing_export_csv(request):
+    bills = _get_filtered_bills(request)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="billing_report.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Bill ID', 'Patient', 'Description', 'Amount', 'Status', 'Due Date', 'Paid Date', 'Created At'])
+
+    for bill in bills:
+        writer.writerow([
+            bill.id,
+            bill.patient.full_name,
+            bill.description,
+            str(bill.amount),
+            bill.get_status_display(),
+            bill.due_date.isoformat() if bill.due_date else '',
+            bill.paid_date.isoformat() if bill.paid_date else '',
+            bill.created_at.strftime('%Y-%m-%d %H:%M:%S') if bill.created_at else '',
+        ])
+
+    return response
+
+
+@login_required
+def billing_export_pdf(request):
+    bills = _get_filtered_bills(request)
+
+    buffer = io.BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+
+    x_left = 40
+    y = height - 50
+
+    p.setFont('Helvetica-Bold', 14)
+    p.drawString(x_left, y, 'Billing Report')
+    y -= 25
+
+    p.setFont('Helvetica', 10)
+    p.drawString(x_left, y, f"Generated: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    y -= 20
+
+    # Table header
+    p.setFont('Helvetica-Bold', 10)
+    p.drawString(x_left, y, 'ID')
+    p.drawString(x_left + 40, y, 'Patient')
+    p.drawString(x_left + 200, y, 'Amount')
+    p.drawString(x_left + 270, y, 'Status')
+    p.drawString(x_left + 340, y, 'Due')
+    y -= 15
+    p.setFont('Helvetica', 9)
+
+    def new_page():
+        nonlocal y
+        p.showPage()
+        y = height - 50
+        p.setFont('Helvetica-Bold', 14)
+        p.drawString(x_left, y, 'Billing Report (continued)')
+        y -= 30
+        p.setFont('Helvetica-Bold', 10)
+        p.drawString(x_left, y, 'ID')
+        p.drawString(x_left + 40, y, 'Patient')
+        p.drawString(x_left + 200, y, 'Amount')
+        p.drawString(x_left + 270, y, 'Status')
+        p.drawString(x_left + 340, y, 'Due')
+        y -= 15
+        p.setFont('Helvetica', 9)
+
+    for bill in bills:
+        if y < 60:
+            new_page()
+
+        patient_name = bill.patient.full_name
+        if len(patient_name) > 24:
+            patient_name = patient_name[:21] + '...'
+
+        status = bill.get_status_display()
+        due = bill.due_date.strftime('%Y-%m-%d') if bill.due_date else ''
+
+        p.drawString(x_left, y, f"#{bill.id}")
+        p.drawString(x_left + 40, y, patient_name)
+        p.drawRightString(x_left + 255, y, f"${bill.amount}")
+        p.drawString(x_left + 270, y, status)
+        p.drawString(x_left + 340, y, due)
+        y -= 14
+
+    p.showPage()
+    p.save()
+
+    buffer.seek(0)
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="billing_report.pdf"'
+    return response
 
 @login_required
 def billing_create(request):

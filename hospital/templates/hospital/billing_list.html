@@ -79,7 +79,7 @@
     <div class="card-body">
         {% if bills %}
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table id="billingTable" class="table table-hover">
                 <thead class="table-dark">
                     <tr>
                         <th>Bill ID</th>
@@ -156,15 +156,15 @@
             </div>
             <div class="card-body">
                 <div class="btn-group" role="group">
-                    <button class="btn btn-outline-primary" onclick="exportToCSV('billingTable', 'billing_report.csv')">
+                    <a class="btn btn-outline-primary" href="{% url 'billing_export_csv' %}?{{ request.GET.urlencode }}">
                         <i class="fas fa-file-csv"></i> Export to CSV
-                    </button>
-                    <button class="btn btn-outline-success" onclick="printElement('billingTable')">
+                    </a>
+                    <button class="btn btn-outline-success" type="button" onclick="printElement('billingTable')">
                         <i class="fas fa-print"></i> Print Report
                     </button>
-                    <button class="btn btn-outline-info" onclick="generatePDF()">
+                    <a class="btn btn-outline-info" href="{% url 'billing_export_pdf' %}?{{ request.GET.urlencode }}">
                         <i class="fas fa-file-pdf"></i> Generate PDF
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>
@@ -213,8 +213,5 @@ function getCookie(name) {
     return cookieValue;
 }
 
-function generatePDF() {
-    showNotification('PDF generation feature coming soon!', 'info');
-}
 </script>
 {% endblock %}
