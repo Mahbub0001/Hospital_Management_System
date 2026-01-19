@@ -43,6 +43,8 @@ urlpatterns = [
     path('billing/', views.billing_list, name='billing_list'),
     path('billing/create/', views.billing_create, name='billing_create'),
     path('billing/<int:pk>/update/', views.billing_update, name='billing_update'),
+    path('billing/export/csv/', views.billing_export_csv, name='billing_export_csv'),
+    path('billing/export/pdf/', views.billing_export_pdf, name='billing_export_pdf'),
     
     # API URLs
     path('api/patients/', views.api_patients, name='api_patients'),
