@@ -9,6 +9,7 @@ from django.http import JsonResponse, HttpResponse
 from datetime import datetime, date, timedelta
 import csv
 import io
+import json
 
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -73,6 +74,20 @@ def dashboard(request):
         status='scheduled'
     ).order_by('time')[:5]
     
+    # Appointment statistics (last 7 days including today)
+    start_date = today - timedelta(days=6)
+    date_range = [start_date + timedelta(days=i) for i in range(7)]
+    counts_by_date = {
+        row['date']: row['count']
+        for row in Appointment.objects.filter(date__range=(start_date, today))
+        .values('date')
+        .annotate(count=Count('id'))
+    }
+    appointment_chart = {
+        'labels': [d.strftime('%a') for d in date_range],
+        'data': [counts_by_date.get(d, 0) for d in date_range],
+    }
+
     context = {
         'total_patients': total_patients,
         'total_doctors': total_doctors,
@@ -80,6 +95,7 @@ def dashboard(request):
         'today_appointments': today_appointments,
         'recent_appointments': recent_appointments,
         'upcoming_appointments': upcoming_appointments,
+        'appointment_chart_json': json.dumps(appointment_chart),
     }
     return render(request, 'hospital/dashboard.html', context)
 

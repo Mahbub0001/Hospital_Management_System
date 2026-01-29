@@ -9,12 +9,50 @@
     --danger-color: #dc3545;
     --light-color: #f8f9fa;
     --dark-color: #212529;
+
+    --bg: #f8f9fa;
+    --bg-elevated: #ffffff;
+    --text: #212529;
+    --text-muted: #6c757d;
+    --border: #dee2e6;
+    --shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --shadow-hover: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+html[data-theme="dark"],
+body.theme-dark {
+    --bg: #0b1220;
+    --bg-elevated: #111b2e;
+    --text: #e6eaf2;
+    --text-muted: #a6b0c3;
+    --border: rgba(255, 255, 255, 0.12);
+    --shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.35);
+    --shadow-hover: 0 0.75rem 1.25rem rgba(0, 0, 0, 0.45);
 }
 
 /* General Styles */
-body {
+html, body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
+    background-color: var(--bg) !important;
+    color: var(--text) !important;
+    transition: background-color 320ms ease, color 320ms ease;
+}
+
+body.theme-switching::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(13, 110, 253, 0.18), rgba(0, 0, 0, 0));
+    opacity: 0;
+    pointer-events: none;
+    animation: themeFlash 420ms ease;
+    z-index: 2000;
+}
+
+@keyframes themeFlash {
+    0% { opacity: 0; }
+    35% { opacity: 1; }
+    100% { opacity: 0; }
 }
 
 /* Navbar Styles */
@@ -37,13 +75,20 @@ body {
 .card {
     border: none;
     border-radius: 0.75rem;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    background-color: var(--bg-elevated);
+    color: var(--text);
+    box-shadow: var(--shadow);
     transition: all 0.3s ease;
 }
 
 .card:hover {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-hover);
     transform: translateY(-2px);
+}
+
+.card-body, .card-header, .card-footer {
+    background-color: transparent;
+    color: var(--text);
 }
 
 .card-header {
@@ -67,6 +112,19 @@ body {
 
 .table-hover tbody tr:hover {
     background-color: rgba(13, 110, 253, 0.05);
+}
+
+html[data-theme="dark"] .table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.12);
+}
+
+.table {
+    color: var(--text);
+}
+
+html[data-theme="dark"] .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text);
 }
 
 /* Button Styles */
@@ -96,8 +154,19 @@ body {
 /* Form Styles */
 .form-control, .form-select {
     border-radius: 0.5rem;
-    border: 1px solid #dee2e6;
+    border: 1px solid var(--border);
+    background-color: var(--bg-elevated);
+    color: var(--text);
     transition: all 0.3s ease;
+}
+
+html[data-theme="dark"] .form-control::placeholder {
+    color: rgba(230, 234, 242, 0.55);
+}
+
+html[data-theme="dark"] .form-select {
+    background-color: var(--bg-elevated);
+    color: var(--text);
 }
 
 .form-control:focus, .form-select:focus {
@@ -107,8 +176,84 @@ body {
 
 .form-label {
     font-weight: 600;
-    color: var(--dark-color);
+    color: var(--text);
     margin-bottom: 0.5rem;
+}
+
+.dropdown-menu {
+    background-color: var(--bg-elevated);
+    border-color: var(--border);
+}
+
+.dropdown-item {
+    color: var(--text);
+}
+
+.dropdown-item:hover, .dropdown-item:focus {
+    background-color: rgba(13, 110, 253, 0.10);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .table-dark {
+    --bs-table-bg: #0f172a;
+    --bs-table-striped-bg: #0f172a;
+    --bs-table-striped-color: var(--text);
+    --bs-table-active-bg: #0f172a;
+    --bs-table-active-color: var(--text);
+    --bs-table-hover-bg: #0f172a;
+    --bs-table-hover-color: var(--text);
+    color: var(--text);
+}
+
+footer {
+    background-color: var(--bg-elevated) !important;
+    color: var(--text);
+    border-top: 1px solid var(--border);
+}
+
+html[data-theme="dark"] footer {
+    background-color: #0f172a !important;
+}
+
+.theme-toggle {
+    width: 42px;
+    height: 36px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    transition: transform 180ms ease, background-color 320ms ease, border-color 320ms ease;
+}
+
+.theme-toggle:hover {
+    transform: translateY(-1px);
+}
+
+html[data-theme="dark"] .theme-toggle {
+    background: rgba(17, 27, 46, 0.55);
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+.list-group-item {
+    background-color: var(--bg-elevated);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+.modal-content {
+    background-color: var(--bg-elevated);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+.modal-header, .modal-footer {
+    border-color: var(--border);
 }
 
 /* Badge Styles */
