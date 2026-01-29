@@ -1,7 +1,8 @@
 // Main JavaScript file for Hospital Management System
 
-// Wait for DOM to be fully loaded
-document.addEventListener('DOMContentLoaded', function() {
+function initializeApp() {
+    initializeThemeToggle();
+
     // Initialize tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -46,7 +47,80 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Chart initialization
     initializeCharts();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    initializeApp();
+}
+
+function initializeThemeToggle() {
+    const toggleBtn = document.getElementById('themeToggle');
+    const icon = document.getElementById('themeIcon');
+
+    const applyTheme = (theme, animate = false) => {
+        if (animate) {
+            document.body.classList.add('theme-switching');
+            window.setTimeout(() => document.body.classList.remove('theme-switching'), 450);
+        }
+
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.setAttribute('data-theme', theme);
+        if (document.body) {
+            document.body.classList.toggle('theme-dark', theme === 'dark');
+            document.body.dataset.theme = theme;
+        }
+        try {
+            localStorage.setItem('theme', theme);
+        } catch (e) {
+        }
+
+        if (icon) {
+            icon.classList.remove('fa-moon', 'fa-sun');
+            icon.classList.add(theme === 'dark' ? 'fa-sun' : 'fa-moon');
+        }
+
+        if (toggleBtn) {
+            toggleBtn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+        }
+    };
+
+    const getPreferredTheme = () => {
+        try {
+            const saved = localStorage.getItem('theme');
+            if (saved === 'dark' || saved === 'light') return saved;
+        } catch (e) {
+        }
+
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+
+    applyTheme(getPreferredTheme(), false);
+
+    const toggle = () => {
+        const current = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+        const next = current === 'dark' ? 'light' : 'dark';
+        applyTheme(next, true);
+    };
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggle();
+        });
+    } else {
+        // Fallback for pages where the button is injected later
+        document.addEventListener('click', (e) => {
+            const btn = e.target && (e.target.id === 'themeToggle' ? e.target : e.target.closest ? e.target.closest('#themeToggle') : null);
+            if (btn) {
+                e.preventDefault();
+                toggle();
+            }
+        });
+    }
+}
 
 // Dynamic form field updates
 function initializeDynamicForms() {
